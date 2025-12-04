@@ -1,415 +1,186 @@
-# Simple MNIST Neural Network from Scratch in NumPy
-
-A minimal implementation of a two-layer neural network built entirely from scratch using only NumPy for MNIST digit classification. This project demonstrates the fundamental mathematics and algorithms behind neural networks without relying on high-level frameworks like TensorFlow or Keras.
-
-## 📋 Table of Contents
-- [Overview](#overview)
-- [Architecture](#architecture)
-- [Mathematical Foundation](#mathematical-foundation)
-- [Dataset](#dataset)
-- [Requirements](#requirements)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Results](#results)
-- [Code Structure](#code-structure)
-- [Educational Value](#educational-value)
-- [Key Functions](#key-functions)
-- [Performance](#performance)
-- [Visualization](#visualization)
-- [Extensions and Improvements](#extensions-and-improvements)
-- [References](#references)
-
-## 🔍 Overview
-
-This project implements a simple two-layer neural network from scratch to classify handwritten digits from the MNIST dataset. The implementation focuses on educational clarity, showing every mathematical step of forward propagation, backward propagation, and gradient descent without any machine learning libraries.
-
-**Key Features:**
-- Pure NumPy implementation (no TensorFlow/PyTorch)
-- Complete mathematical derivations included
-- Step-by-step gradient descent visualization
-- Achieves ~84% accuracy on MNIST digit classification
-- Educational focus with detailed explanations
-
-## 🏗️ Architecture
-
-The neural network consists of a simple two-layer architecture:
-
-### Layer Configuration:
-- **Input Layer** \\(A^{[0]}\\): 784 units (28×28 pixels)
-- **Hidden Layer** \\(A^{[1]}\\): 10 units with ReLU activation
-- **Output Layer** \\(A^{[2]}\\): 10 units with Softmax activation (digit classes 0-9)
-
-### Network Dimensions:
-```
-Input:  784 × m (where m = number of training examples)
-Layer 1: 10 × 784 weights + 10 × 1 biases
-Layer 2: 10 × 10 weights + 10 × 1 biases
-Output: 10 × m (probability distribution over 10 classes)
-```
-
-## 📊 Mathematical Foundation
-
-### Forward Propagation
-
-The forward pass equations are:
-
-**Layer 1:**
-\\[ Z^{[1]} = W^{[1]} X + b^{[1]} \\]
-\\[ A^{[1]} = g_{ReLU}(Z^{[1]}) \\]
-
-**Layer 2:**
-\\[ Z^{[2]} = W^{[2]} A^{[1]} + b^{[2]} \\]
-\\[ A^{[2]} = g_{softmax}(Z^{[2]}) \\]
-
-### Backward Propagation
-
-The gradient computation follows:
-
-**Output Layer Gradients:**
-\\[ dZ^{[2]} = A^{[2]} - Y \\]
-\\[ dW^{[2]} = \\frac{1}{m} dZ^{[2]} A^{[1]T} \\]
-\\[ db^{[2]} = \\frac{1}{m} \\sum dZ^{[2]} \\]
-
-**Hidden Layer Gradients:**
-\\[ dZ^{[1]} = W^{[2]T} dZ^{[2]} \\cdot g^{[1]'}(Z^{[1]}) \\]
-\\[ dW^{[1]} = \\frac{1}{m} dZ^{[1]} A^{[0]T} \\]
-\\[ db^{[1]} = \\frac{1}{m} \\sum dZ^{[1]} \\]
-
-### Parameter Updates
-
-Gradient descent updates:
-\\[ W^{[2]} := W^{[2]} - \\alpha dW^{[2]} \\]
-\\[ b^{[2]} := b^{[2]} - \\alpha db^{[2]} \\]
-\\[ W^{[1]} := W^{[1]} - \\alpha dW^{[1]} \\]
-\\[ b^{[1]} := b^{[1]} - \\alpha db^{[1]} \\]
-
-## 📈 Dataset
-
-**MNIST Digit Recognition Dataset:**
-- **Total samples**: 42,000 images
-- **Training set**: 41,000 images
-- **Development set**: 1,000 images  
-- **Image size**: 28×28 pixels (784 features)
-- **Classes**: 10 digits (0-9)
-- **Data format**: Grayscale images normalized to [0, 1]
-
-### Data Preprocessing:
-```python
-# Normalization
-X_train = X_train / 255.0
-X_dev = X_dev / 255.0
-
-# One-hot encoding for labels
-Y_one_hot = one_hot(Y_train)  # Shape: (10, m)
-```
-
-## 🛠️ Requirements
-
-```
-numpy
-pandas
-matplotlib
-```
-
-## 💾 Installation
-
-1. **Clone the repository:**
-```bash
-git clone <your-repo-url>
-cd simple-mnist-nn-numpy
-```
-
-2. **Install dependencies:**
-```bash
-pip install numpy pandas matplotlib
-```
-
-3. **For Kaggle environment:**
-```python
-# Data is loaded from Kaggle input directory
-data = pd.read_csv('/kaggle/input/digit-recognizer/train.csv')
-```
-
-## 🚀 Usage
-
-### Quick Start:
-```python
-import numpy as np
-import pandas as pd
-from matplotlib import pyplot as plt
-
-# Load and preprocess data
-data = pd.read_csv('/kaggle/input/digit-recognizer/train.csv')
-data = np.array(data)
-m, n = data.shape
-np.random.shuffle(data)
-
-# Split into train/dev sets
-data_dev = data[0:1000].T
-Y_dev = data_dev[0]
-X_dev = data_dev[1:n] / 255.0
-
-data_train = data[1000:m].T
-Y_train = data_train[0]
-X_train = data_train[1:n] / 255.0
-
-# Train the model
-W1, b1, W2, b2 = gradient_descent(X_train, Y_train, 0.10, 500)
-
-# Make predictions
-predictions = make_predictions(X_train, W1, b1, W2, b2)
-accuracy = get_accuracy(predictions, Y_train)
-print(f"Training Accuracy: {accuracy:.3f}")
-```
-
-## 📊 Results
-
-### Training Performance:
-- **Final Training Accuracy**: ~84%
-- **Development Set Accuracy**: ~82%
-- **Training Time**: ~40 seconds for 500 iterations
-- **Learning Rate**: 0.10
-
-### Training Progress:
-```
-Iteration 0:   Accuracy = 10.5%
-Iteration 50:  Accuracy = 34.9%
-Iteration 100: Accuracy = 54.1%
-Iteration 200: Accuracy = 73.4%
-Iteration 500: Accuracy = 84.0%
-```
-
-## 🗂️ Code Structure
-
-### Core Components:
-
-**1. Parameter Initialization:**
-```python
-def init_params():
-    W1 = np.random.rand(10, 784) - 0.5
-    b1 = np.random.rand(10, 1) - 0.5
-    W2 = np.random.rand(10, 10) - 0.5
-    b2 = np.random.rand(10, 1) - 0.5
-    return W1, b1, W2, b2
-```
-
-**2. Activation Functions:**
-```python
-def ReLU(Z):
-    return np.maximum(Z, 0)
-
-def softmax(Z):
-    A = np.exp(Z) / sum(np.exp(Z))
-    return A
-```
-
-**3. Forward Propagation:**
-```python
-def forward_prop(W1, b1, W2, b2, X):
-    Z1 = W1.dot(X) + b1
-    A1 = ReLU(Z1)
-    Z2 = W2.dot(A1) + b2
-    A2 = softmax(Z2)
-    return Z1, A1, Z2, A2
-```
-
-**4. Backward Propagation:**
-```python
-def backward_prop(Z1, A1, Z2, A2, W1, W2, X, Y):
-    one_hot_Y = one_hot(Y)
-    dZ2 = A2 - one_hot_Y
-    dW2 = 1 / m * dZ2.dot(A1.T)
-    db2 = 1 / m * np.sum(dZ2)
-    dZ1 = W2.T.dot(dZ2) * ReLU_deriv(Z1)
-    dW1 = 1 / m * dZ1.dot(X.T)
-    db1 = 1 / m * np.sum(dZ1)
-    return dW1, db1, dW2, db2
-```
-
-## 🎓 Educational Value
-
-This implementation serves as an excellent learning resource for:
-
-### Concepts Demonstrated:
-- **Matrix Operations**: Understanding how neural networks process batches of data
-- **Gradient Descent**: Step-by-step optimization algorithm implementation
-- **Backpropagation**: Detailed gradient computation through chain rule
-- **Activation Functions**: ReLU and Softmax implementations from scratch
-- **One-Hot Encoding**: Converting categorical labels for multi-class classification
-- **Vectorization**: Efficient NumPy operations for batch processing
-
-### Mathematical Insights:
-- How gradients flow backward through the network
-- The role of activation functions in learning non-linear patterns
-- Parameter initialization strategies
-- Loss function optimization dynamics
-
-## ⚙️ Key Functions
-
-### Training Loop:
-```python
-def gradient_descent(X, Y, alpha, iterations):
-    W1, b1, W2, b2 = init_params()
-    for i in range(iterations):
-        Z1, A1, Z2, A2 = forward_prop(W1, b1, W2, b2, X)
-        dW1, db1, dW2, db2 = backward_prop(Z1, A1, Z2, A2, W1, W2, X, Y)
-        W1, b1, W2, b2 = update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha)
-        
-        if i % 10 == 0:
-            predictions = get_predictions(A2)
-            print(f"Iteration: {i}, Accuracy: {get_accuracy(predictions, Y):.3f}")
-    
-    return W1, b1, W2, b2
-```
-
-### Prediction and Evaluation:
-```python
-def make_predictions(X, W1, b1, W2, b2):
-    _, _, _, A2 = forward_prop(W1, b1, W2, b2, X)
-    predictions = get_predictions(A2)
-    return predictions
-
-def get_accuracy(predictions, Y):
-    return np.sum(predictions == Y) / Y.size
-```
-
-### Utility Functions:
-```python
-def one_hot(Y):
-    one_hot_Y = np.zeros((Y.size, Y.max() + 1))
-    one_hot_Y[np.arange(Y.size), Y] = 1
-    one_hot_Y = one_hot_Y.T
-    return one_hot_Y
-
-def ReLU_deriv(Z):
-    return Z > 0
-
-def get_predictions(A2):
-    return np.argmax(A2, 0)
-
-def update_params(W1, b1, W2, b2, dW1, db1, dW2, db2, alpha):
-    W1 = W1 - alpha * dW1
-    b1 = b1 - alpha * db1    
-    W2 = W2 - alpha * dW2  
-    b2 = b2 - alpha * db2    
-    return W1, b1, W2, b2
-```
-
-## 📊 Performance Analysis
-
-### Strengths:
-- **Educational Clarity**: Every step is explicit and understandable
-- **No Black Boxes**: Complete implementation visibility
-- **Good Accuracy**: 84% on MNIST is reasonable for such a simple architecture
-- **Fast Training**: Converges quickly due to simple architecture
-
-### Limitations:
-- **Simple Architecture**: Only two layers limit learning capacity
-- **No Regularization**: Potential for overfitting on larger datasets
-- **Basic Optimization**: Uses vanilla gradient descent
-- **Limited Scope**: Designed specifically for MNIST-sized problems
-
-## 🖼️ Visualization
-
-The implementation includes visualization capabilities:
-```python
-def test_prediction(index, W1, b1, W2, b2):
-    current_image = X_train[:, index, None]
-    prediction = make_predictions(current_image, W1, b1, W2, b2)
-    label = Y_train[index]
-    
-    current_image = current_image.reshape((28, 28)) * 255
-    plt.gray()
-    plt.imshow(current_image, interpolation='nearest')
-    plt.show()
-    
-    print(f"Prediction: {prediction}")
-    print(f"Label: {label}")
-
-# Test multiple predictions
-for i in range(3):
-    test_prediction(i, W1, b1, W2, b2)
-```
-
-## 🔄 Extensions and Improvements
-
-### Possible Enhancements:
-- **Add More Layers**: Implement deeper architectures
-- **Regularization**: Add L2 regularization or dropout
-- **Advanced Optimizers**: Implement Adam or RMSprop
-- **Better Initialization**: Use Xavier or He initialization
-- **Data Augmentation**: Rotate/shift images for better generalization
-- **Cross-Validation**: Implement k-fold validation
-
-### Implementation Examples:
-
-**L2 Regularization:**
-```python
-def backward_prop_regularized(Z1, A1, Z2, A2, W1, W2, X, Y, lambd):
-    m = Y.size
-    one_hot_Y = one_hot(Y)
-    
-    dZ2 = A2 - one_hot_Y
-    dW2 = (1/m) * dZ2.dot(A1.T) + (lambd/m) * W2
-    db2 = (1/m) * np.sum(dZ2, axis=1, keepdims=True)
-    
-    dZ1 = W2.T.dot(dZ2) * ReLU_deriv(Z1)
-    dW1 = (1/m) * dZ1.dot(X.T) + (lambd/m) * W1
-    db1 = (1/m) * np.sum(dZ1, axis=1, keepdims=True)
-    
-    return dW1, db1, dW2, db2
-```
-
-**Xavier Initialization:**
-```python
-def init_params_xavier():
-    W1 = np.random.randn(10, 784) * np.sqrt(1/784)
-    b1 = np.zeros((10, 1))
-    W2 = np.random.randn(10, 10) * np.sqrt(1/10)
-    b2 = np.zeros((10, 1))
-    return W1, b1, W2, b2
-```
-
-## 📚 References
-
-1. **Deep Learning Book**: Ian Goodfellow, Yoshua Bengio, Aaron Courville
-2. **Neural Networks and Deep Learning**: Michael Nielsen
-3. **MNIST Database**: [yann.lecun.com/exdb/mnist/](http://yann.lecun.com/exdb/mnist/)
-4. **NumPy Documentation**: [numpy.org](https://numpy.org)
-5. **Original MNIST Paper**: LeCun, Y., Bottou, L., Bengio, Y., & Haffner, P. (1998)
-
-## 🤝 Contributing
-
-Contributions are welcome! Areas for improvement:
-- Code optimization and vectorization
-- Additional activation functions
-- More sophisticated optimizers
-- Enhanced visualization features
-- Documentation improvements
-
-### How to Contribute:
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is open source and available under the [MIT License](LICENSE).
-
-## 🙋‍♂️ FAQ
-
-### Q: Why only 10 hidden units?
-A: This simple architecture is designed for educational purposes. While more units would improve performance, the current setup allows for clear understanding of the mathematics involved.
-
-### Q: Can this be extended to other datasets?
-A: Yes! The code can be modified for other classification tasks by adjusting the input dimensions, number of classes, and output layer size.
-
-### Q: Why not use modern optimizers?
-A: Vanilla gradient descent helps students understand the fundamental optimization process before moving to advanced techniques like Adam or RMSprop.
-
----
-
-**Note**: This implementation prioritizes educational value and mathematical transparency over performance. It's designed to help understand the fundamental concepts behind neural networks rather than achieve state-of-the-art results.
-'
+MiniGrad: Neural Network Engine from Scratch
+
+MiniGrad is a lightweight, educational neural network library built entirely from scratch in Python. It implements a scalar-value autograd engine (automatic differentiation) and a PyTorch-like API for building and training neural networks.
+
+This project is designed to demystify deep learning by exposing the internal mechanics of backpropagation, computational graphs, and gradient descent without relying on external heavy frameworks.
+
+🌟 Key Features
+
+Autograd Engine: Tracks operations on scalar values to build a dynamic computational graph (DAG).
+
+Automatic Differentiation: Implements reverse-mode automatic differentiation (backpropagation) using the Chain Rule.
+
+PyTorch-like API: Familiar structure using .backward(), .zero_grad()-style resets, and parameter updates.
+
+Graph Visualization: Built-in integration with graphviz to visualize the forward pass and gradients.
+
+Neural Network Modules: Includes Neuron, Layer, and MLP (Multi-Layer Perceptron) classes.
+
+📂 Code Structure & Detailed Explanation
+
+1. The Value Class (The Autograd Engine)
+
+The core of the library is the Value class. It wraps standard Python numbers (scalars) to enable gradient tracking.
+
+Initialization (__init__)
+
+def __init__(self, data, _children=(), _op='', label=''):
+    self.data = data        # The actual scalar value (e.g., 2.0)
+    self.grad = 0.0         # Derivative of Loss with respect to this value
+    self._backward = lambda: None  # Function to propagate gradients backward
+    self._prev = set(_children)    # Pointers to parent nodes (creates the DAG)
+    self._op = _op          # The operation that created this node (for debug/viz)
+
+
+self.grad: Initially 0. It accumulates the derivative during backpropagation.
+
+self._prev: This is crucial. It stores the links to the values that created this value, effectively building a Directed Acyclic Graph (DAG).
+
+Operator Overloading (__add__, __mul__, etc.)
+
+To allow expressions like a + b or a * b, Python's magic methods are overridden.
+
+Forward Pass: Calculates the result (e.g., self.data + other.data).
+
+Backward Pass (_backward closure): This is the heart of the engine. For every operation, we define a local function that knows how to calculate the gradient for its inputs using the Chain Rule.
+
+Example: Addition
+
+def _backward():
+    # Local derivative of addition is 1.0
+    # We accumulate (+=) gradients to handle cases where a variable is used multiple times
+    self.grad += 1.0 * out.grad
+    other.grad += 1.0 * out.grad
+
+
+Activation Functions (tanh, exp)
+
+Non-linearity is introduced here.
+
+tanh: Squashes inputs between -1 and 1.
+
+Derivative: $\frac{d}{dx}\tanh(x) = 1 - \tanh^2(x)$.
+
+The _backward function for tanh implements this formula to pass gradients backward.
+
+backward() (Topological Sort)
+
+To calculate gradients for the whole network, we must process nodes in the correct order (from output back to input).
+
+Topological Sort: A recursive algorithm visits every node in the graph, ensuring a node is processed only after all its dependencies are processed.
+
+Reverse Iteration: We iterate through the sorted list in reverse and call _backward() on each node.
+
+2. Neural Network Modules
+
+Modeled after torch.nn, these classes abstract away the individual Value operations.
+
+Neuron
+
+Represents a single neuron: $y = \tanh(\sum(w_i \cdot x_i) + b)$.
+
+Initializes random weights (self.w) and bias (self.b).
+
+__call__: Performs the dot product of inputs and weights, adds bias, and applies non-linearity.
+
+parameters(): Returns a list of [weights, bias] for optimization.
+
+Layer
+
+A collection of Neurons.
+
+__init__: Creates a list of nout neurons.
+
+__call__: Passes the input to every neuron and returns their outputs.
+
+MLP (Multi-Layer Perceptron)
+
+A full feed-forward neural network.
+
+__init__: Takes a list of layer sizes (e.g., [3, 4, 4, 1]) and chains Layer objects together.
+
+__call__: Sequentially passes data through each layer.
+
+3. Graph Visualization (draw_dot)
+
+The code includes helper functions (trace, draw_dot) using the graphviz library.
+
+Purpose: Visualizes the computational graph.
+
+Nodes: Represent Value objects (showing data and grad).
+
+Edges: Represent the flow of data (operations).
+
+Usage: Extremely useful for debugging to see if the graph is connected correctly.
+
+🏃 Example Usage & Training Loop
+
+Here is how you can use MiniGrad to train a simple network:
+
+# 1. Define the Network
+# 3 inputs, two hidden layers of 4 neurons, 1 output
+n = MLP(3, [4, 4, 1])
+
+# 2. Define Inputs and Targets
+xs = [
+  [2.0, 3.0, -1.0],
+  [3.0, -1.0, 0.5],
+  [0.5, 1.0, 1.0],
+  [1.0, 1.0, -1.0],
+]
+ys = [1.0, -1.0, -1.0, 1.0] # desired targets
+
+# 3. Training Loop
+for k in range(20):
+  
+  # a. Forward Pass
+  ypred = [n(x) for x in xs]
+  loss = sum((yout - ygt)**2 for ygt, yout in zip(ys, ypred))
+  
+  # b. Zero Gradients
+  # Vital! Otherwise grads accumulate from previous steps
+  for p in n.parameters():
+    p.grad = 0.0
+  
+  # c. Backward Pass
+  loss.backward()
+  
+  # d. Update (Gradient Descent)
+  for p in n.parameters():
+    p.data += -0.1 * p.grad
+  
+  print(f"Step {k} | Loss: {loss.data}")
+
+
+⚠️ The "Accumulation" Bug Explanation
+
+The code correctly handles a common pitfall in backpropagation implementation:
+
+Wrong Way: self.grad = ... (Overwrites the gradient).
+
+Correct Way: self.grad += ... (Accumulates the gradient).
+
+Why?
+If a variable is used multiple times (e.g., b = a + a), the gradient must flow back from both branches. The multivariate chain rule states these gradients should be summed. Using += ensures we capture the total influence of a variable on the loss.
+
+✅ Correctness Verification
+
+The library includes test functions (test_sanity_check, test_more_ops) that compare MiniGrad results against PyTorch to ensure mathematical accuracy.
+
+Checks: Forward pass values and Backward pass gradients.
+
+Result: Asserts that both libraries produce identical results within a tolerance.
+
+🛠 Prerequisites
+
+To run this code, you need:
+
+Python 3.x
+
+graphviz (for visualization)
+
+numpy (optional, used for some helper math)
+
+torch (optional, only used in the sanity check tests)
+
+pip install graphviz numpy torch
